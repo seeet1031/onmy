@@ -4,8 +4,13 @@ import environ
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DEBUG = True
-#ALLOWED_HOSTS = ['ONMY2.us-east-1.elasticbeanstalk.com']
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'ec2-44-212-22-24.compute-1.amazonaws.com',
+    'localhost',
+    '127.0.0.1',
+    # 必要に応じて他のドメインを追加
+]
+#ALLOWED_HOSTS = []
 AUTH_USER_MODEL = 'accounts.CustomUser'
 INSTALLED_APPS = [
     'django.contrib.admin',
