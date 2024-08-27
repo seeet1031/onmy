@@ -1,0 +1,12 @@
+{% extends 'base_user.html' %}
+
+{% block title %}ユーザーマイページ{% endblock %}
+
+{% block content %}
+<div class="mypage-container">
+    <h2>ユーザーマイページ</h2>
+    <h2>Welcome, {{ user.username }}!</h2>
+    <p>You are logged in as a {{ user.role }}.</p>
+    <a href="{% url 'logout' %}">Logout</a>
+</div>
+{% endblock %}

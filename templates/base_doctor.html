@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}診療予約{% endblock %}</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- 他のメタデータやCSSリンクなど -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    
+    <style>
+.schedule-container {
+    position: relative;
+    margin-top: 20px;
+    width: 100%;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed; /* テーブルの幅を固定にする */
+}
+
+.date-column {
+    border-left: 2px solid black; /* 日付の区切りに縦線を追加 */
+}
+
+.hour-row {
+    border-top: 2px solid black; /* 1時間ごとの横線を追加 */
+}
+
+.schedule-cell {
+    height: 30px; /* 各セルの高さを30分単位に設定 */
+    cursor: pointer; /* セルにマウスカーソルが合ったときに手の形にする */
+    background-color: #ffffff; /* デフォルトの背景色を白に設定 */
+    position: relative; /* 親要素の位置を基準にする */
+}
+
+.schedule-cell.selected {
+    background-color: #808080; /* 選択されたセルの背景色（グレー） */
+}
+
+.schedule-cell.registered {
+    color: #ffffff; /* 登録済みのセルの文字色（白） */
+    text-align: center; /* テキストを中央揃え */
+    background-color: #b3d9ff; /* 登録済みのセルの背景色 */
+    cursor: not-allowed; /* マウスカーソルを禁止マークに */
+}
+
+.time-label {
+    text-align: right;
+    padding-right: 10px;
+    width: 50px; /* 時間ラベルの幅を固定 */
+}
+
+.schedule-body tr:nth-child(2n+1) .schedule-cell {
+    border-bottom: 1px solid #ddd; /* 30分単位の線を薄く設定 */
+}
+
+.schedule-header th, .schedule-body td {
+    border-right: 1px solid #ddd; /* セルの右側に薄い境界線 */
+}
+.time-range {
+    position: absolute;
+    top: 0;
+    left: 0;
+    font-size: 12px;
+    background-color: rgba(255, 255, 255, 0.7); /* 背景を少し透明にする */
+    padding: 2px;
+    border-radius: 3px;
+    display: none; /* 初期状態は非表示 */
+}
+.time-label, .schedule-cell {
+    width: 100px; /* 各セルの幅を固定 */
+    max-width: 100px; /* 最大幅を固定 */
+    word-wrap: break-word; /* テキストがセル内で折り返すようにする */
+    text-align: center; /* テキストを中央揃え */
+}
+
+
+
+        header{
+            background: #6b7ad0 !important;
+        }
+        footer {
+            background: #6b7ad0 !important;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #6b7ad01f !important;
+        }
+        .step-bar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            list-style: none;
+            padding: 0;
+        }
+        .step-bar li {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            border-bottom: 2px solid #ccc;
+        }
+        .step-bar li.active {
+            border-bottom: 2px solid #007bff;
+            font-weight: bold;
+        }
+        .option-buttons {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .option-buttons button {
+            margin: 0 10px;
+        }
+        .additional-options {
+            display: none;
+            margin-top: 20px;
+        }
+        .additional-options.active {
+            display: block;
+        }
+        .questionnaire {
+            display: none;
+        }
+        .questionnaire.active {
+            display: block;
+            margin-top: 20px;
+        }
+        #calendar-container {
+            max-width: 1100px;
+            margin: 40px auto;
+            padding: 0 10px;
+        }
+        #calendar {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .calendar-wrapper {
+            height: 70vh;
+            overflow-y: auto;
+        }
+        .event-symbol {
+            text-decoration: none;
+            font-size: 1.5rem;
+        }
+        .event-symbol-enabled {
+            color: green;
+            cursor: pointer;
+        }
+        .event-symbol-disabled {
+            color: red;
+            cursor: not-allowed;
+        }
+        .navbar-custom .navbar-brand,
+        .navbar-custom .nav-link {
+            color: white;
+        }
+        .navbar-custom .nav-link:hover {
+            color: #d4d4d4;
+        }
+        .navbar-custom .navbar-toggler {
+            border-color: rgb(255, 255, 255);
+        }
+        .navbar-custom .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='rgba%28255, 255, 255, 1%29' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/3E%3C/svg%3E");
+        }
+        .navbar-text {
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-custom">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="#">ONMY</a>
+                <label class="navbar-text me-4">{{ request.user.last_name }}{{ request.user.first_name }}さん</label>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'doctor_mypage' %}">マイページ</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'doctor_appointment_list' %}">診察一覧</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'patient_list_view' %}">カルテ一覧</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">お知らせ</a>
+                        </li>
+                    </ul>
+                    <ul class="navbar-nav ms-3">
+                        <li class="nav-item">
+                            <a class="btn btn-light text-dark me-2" href="{% url 'doctor_schedule' %}">スケジュール登録</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="btn btn-danger" href="{% url 'logout' %}">ログアウト</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    
+    </header>
+    <main>
+        {% block content %}
+        <!-- 各ページのコンテンツがここに挿入されます -->
+        {% endblock %}
+    </main>
+    <footer>
+        <p>&copy; 2024 onmy. All rights reserved.</p>
+    </footer>
+</body>
+</html>

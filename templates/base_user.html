@@ -1,0 +1,152 @@
+{% load i18n %}
+<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% trans "ONMY診療予約" %}{% endblock %}</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+
+    <script src="https://js.stripe.com/v3/"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #00ced117;
+        }
+        .step-bar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            list-style: none;
+            padding: 0;
+        }
+        .step-bar li {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            border-bottom: 2px solid #ccc;
+        }
+        .step-bar li.active {
+            border-bottom: 2px solid #007bff;
+            font-weight: bold;
+        }
+        .option-buttons {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .option-buttons button {
+            margin: 0 10px;
+        }
+        .additional-options {
+            display: none;
+            margin-top: 20px;
+        }
+        .additional-options.active {
+            display: block;
+        }
+        .questionnaire {
+            display: none;
+        }
+        .questionnaire.active {
+            display: block;
+            margin-top: 20px;
+        }
+        #calendar-container {
+            max-width: 1100px;
+            margin: 40px auto;
+            padding: 0 10px;
+        }
+        #calendar {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .calendar-wrapper {
+            height: 70vh;
+            overflow-y: auto;
+        }
+        .event-symbol {
+            text-decoration: none;
+            font-size: 1.5rem;
+        }
+        .event-symbol-enabled {
+            color: green;
+            cursor: pointer;
+        }
+        .event-symbol-disabled {
+            color: red;
+            cursor: not-allowed;
+        }
+        .navbar-custom .navbar-brand,
+        .navbar-custom .nav-link {
+            color: white;
+        }
+        .navbar-custom .nav-link:hover {
+            color: #d4d4d4;
+        }
+        .navbar-custom .navbar-toggler {
+            border-color: rgb(255, 255, 255);
+        }
+        .navbar-custom .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='rgba%28255, 255, 255, 1%29' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/3E%3C/svg%3E");
+        }
+        .navbar-text {
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-custom">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="#">ONMY</a>
+                <label class="navbar-text me-4">{{ request.user.last_name }}{{ request.user.first_name }}{% if LANGUAGE_CODE == 'ja' %}さん{% endif %}</label>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'user_mypage' %}">{% trans "マイページ" %}</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'basic_info' %}">{% trans "基本情報" %}</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'appointment_list' %}">{% trans "診察一覧" %}</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">{% trans "お知らせ" %}</a>
+                        </li>
+                    </ul>
+                    <ul class="navbar-nav ms-3">
+                        <li class="nav-item">
+                            <a class="btn btn-light text-dark me-2" href="{% url 'appointment' %}">{% trans "診療予約" %}</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="btn btn-danger" href="{% url 'logout' %}">{% trans "ログアウト" %}</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    
+    </header>
+    <main>
+        {% block content %}
+        <!-- 各ページのコンテンツがここに挿入されます -->
+        {% endblock %}
+    </main>
+    <footer>
+        <p>&copy; 2024 onmy. All rights reserved.</p>
+    </footer>
+</body>
+</html>

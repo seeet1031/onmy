@@ -1,0 +1,31 @@
+{% extends 'base_doctor.html' %}
+
+{% block content %}
+<h2>患者一覧（担当: {{ user.last_name }} {{ user.first_name }} 医師）</h2>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>名前</th>
+            <th>メールアドレス</th>
+            <th>電話番号</th>
+            <th>予約数</th>
+            <th>アクション</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for patient in patients %}
+        <tr>
+            <td>{{ patient.last_name }} {{ patient.first_name }}</td>
+            <td>{{ patient.email }}</td>
+            <td>{{ patient.profile.phone_number }}</td>
+            <td>{{ patient.user_appointments.count }}</td>
+            <td>
+                <a href="{% url 'medical_record_list' patient.id 0%}">カルテを確認</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

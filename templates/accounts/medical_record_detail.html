@@ -1,0 +1,34 @@
+{% extends 'base_doctor.html' %}
+{% load custom_tags %}
+
+{% block content %}
+<h2>{{ user.last_name }} {{ user.first_name }}のカルテ</h2>
+<div>
+    <p><strong>生年月日:</strong> {{ user.profile.birth_date }}</p>
+    <p><strong>年齢:</strong> {{ user.profile.birth_date|calculate_age }}歳</p>  <!-- カスタムフィルタを使用して年齢を表示 -->
+    <p><strong>性別:</strong> 
+        {% if user.profile.gender == 'male' %}
+            男性
+        {% elif user.profile.gender == 'female' %}
+            女性
+        {% else %}
+            その他
+        {% endif %}
+        </p>    
+    <p><strong>住所:</strong> {{ user.profile.address_1 }}</p>
+    <p><strong>メールアドレス:</strong> {{ user.email }}</p>
+    <p><strong>電話番号:</strong> {{ user.profile.phone_number }}</p>
+
+</div>
+
+<h3>カルテ記録</h3>
+<ul>
+    {% for record in records %}
+        <li>{{ record.created_at }}: {{ record.record_content }}</li>
+    {% endfor %}
+</ul>
+
+
+
+
+{% endblock %}

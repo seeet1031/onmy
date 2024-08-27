@@ -1,0 +1,155 @@
+{% extends 'base_user.html' %}
+
+{% load custom_tags %}
+
+{% block content %}
+<style>
+    .container {
+        margin-top: 50px;
+    }
+    .btn-container {
+        display: flex;
+        justify-content: space-between;
+    }
+    .btn {
+        flex: 1;
+        margin: 0 10px;
+    }
+    .content {
+        margin-top: 20px;
+        border: 1px solid #dee2e6;
+        padding: 10px;
+        display: none;
+    }
+</style>
+<body>
+
+
+
+    <div class="container">
+        <div class="card text-center" style="border: none">
+
+            <div class="btn-container" style="margin-bottom: 20px;">
+                <button class="btn btn-primary" onclick="showContent('waiting')">{% trans "診療待ち情報" %}</button>
+                <button class="btn btn-secondary" onclick="showContent('history')">{% trans "過去の診療歴" %}</button>
+            </div>
+            <div class="row" id="waiting">
+                {% if appointments %}
+                    {% for appointment in appointments %}
+                    <div class="col-12 mb-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <p class="card-text">
+                                    <strong>予約日:</strong> {{ appointment.appointment_date }} {{ appointment.appointment_time }}〜{{ appointment.appointment_time|add_minutes:15 }}<br>
+                                    <strong>先生:</strong> {{ appointment.doctor.get_full_name }}<br>
+                                    <strong>症状/薬:</strong> {{ appointment.symptom_description }}<br>
+                                    <strong>診断書:</strong> {{ appointment.prescription_needed|yesno:"必要,不要" }}<br>
+                                    <div class="d-flex justify-content-between">
+                                        <a href="{{ appointment.meet_link }}" target="_blank" class="btn btn-primary">診療開始</a>
+                                        <a href="{% url 'edit_appointment' appointment.id %}" class="btn btn-sm btn-warning">編集</a>
+                                        <button class="btn btn-danger" onclick="openCancelModal('{{ appointment.id }}')">キャンセル</button>
+                                    </div>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="col-12">
+                        <p class="card-text">診療待ち情報はありません。</p>
+                    </div>
+                {% endif %}
+            </div>            
+            <div id="history" class="card-body" style="display:none">
+                {% if past_appointments %}
+                    {% for appointment in past_appointments %}
+                    <div class="col-12 mb-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <p class="card-text">
+
+                                    <strong>予約日:</strong> {{ appointment.appointment_date }} {{ appointment.appointment_time }}〜{{ appointment.appointment_time|add_minutes:15 }}<br>                                    <strong>先生:</strong> {{ appointment.doctor.get_full_name }}<br>
+                                    <strong>症状/薬:</strong> {{ appointment.symptom_description }}<br>
+                                    <strong>診断書:</strong> {{ appointment.prescription_needed|yesno:"必要,不要" }}<br>
+                                    <strong>ステータス:</strong> 
+                                    {% if 'completed' == appointment.status %}完了{% endif %}
+                                    {% if 'in_progress' == appointment.status %}予約中{% endif %}
+                                    {% if 'cancelled' == appointment.status %}取消{% endif %}
+                                    {% if 'expired' == appointment.status %}期限切れ{% endif %}
+                                    {% if 'examined' == appointment.status %}診察済み{% endif %}
+                                    <br>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="col-12">
+                        <p class="card-text">診療待ち情報はありません。</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- キャンセル確認モーダル -->
+    <div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="cancelModalLabel">予約キャンセル確認</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>予約を取り消しますか？<br>診療の1時間前の場合はキャンセル料がかかりますがキャンセルしますか？</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                    <!-- OKボタン -->
+                    <button type="button" class="btn btn-danger" id="confirmCancelBtn">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        if (typeof jQuery !== 'undefined') {
+            console.log("jQuery is loaded and ready");
+        } else {
+            console.log("jQuery is not loaded");
+        }
+
+
+        function showContent(type) {
+            document.getElementById('waiting').style.display = 'none';
+            document.getElementById('history').style.display = 'none';
+            document.getElementById(type).style.display = 'block';
+        }
+
+        function openCancelModal(appointmentId) {
+            $('#cancelModal').modal('show');
+            document.getElementById('confirmCancelBtn').onclick = function() {
+                cancelAppointment(appointmentId);
+            };
+        }
+
+        function cancelAppointment(appointmentId) {
+            $.ajax({
+                url: '/accounts/cancel-appointment/',
+                method: 'POST',
+                data: {
+                    'appointment_id': appointmentId,
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        location.reload();
+                    } else {
+                        alert('キャンセルに失敗しました。もう一度お試しください。');
+                    }
+                }
+            });
+        }
+    </script>
+    {% endblock %}

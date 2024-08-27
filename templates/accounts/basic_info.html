@@ -1,0 +1,76 @@
+{% extends 'base_user.html' %}
+
+{% block content %}
+<style>
+    .table thead th {
+        background-color: #f8f9fa;
+    }
+    .table td, .table th {
+        vertical-align: middle;
+    }
+    .container {
+        margin-top: 50px;
+    }
+    .card {
+        border: 1px solid #dee2e6;
+        border-radius: .25rem;
+    }
+    .card-header {
+        background-color: #6eb4ff;
+        color: #fff;
+        padding: .75rem 1.25rem;
+        border-bottom: 1px solid #dee2e6;
+    }
+    .card-body {
+        padding: 1.25rem;
+    }
+    .btn-primary {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+</style>
+<div class="container">
+    <div class="card">
+        <div class="card-header">
+            基本情報
+        </div>
+        <div class="card-body">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th scope="col">項目</th>
+                        <th scope="col">内容</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <th scope="row">氏名（姓）</th>
+                        <td>{{ request.user.last_name }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">氏名（名）</th>
+                        <td>{{ request.user.first_name }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">メールアドレス</th>
+                        <td>{{ request.user.email }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">誕生日</th>
+                        <td>{{ profile.birth_date }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">性別</th>
+                        <td>{{ profile.gender }}</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="d-grid gap-2 col-6 mx-auto">
+                <a href="{% url 'edit_basic_info' %}" class="btn btn-primary btn-lg">基本情報を変更する</a>
+            </div>
+        </div>
+    </div>
+</div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    {% endblock %}

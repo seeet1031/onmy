@@ -1,0 +1,56 @@
+{% extends 'base_user.html' %}
+{% load i18n %}
+
+{% load custom_tags %}
+{% block content %}
+
+<div class="container mt-4">
+    <div class="card text-center">
+        <div id="waiting" class="card-body">
+            {% for appointment in appointments %}
+
+                <h5 class="card-title">{% trans "診療待ちの情報" %}</h5>
+                <p class="card-text">{% trans "日時" %}：{{ appointment.appointment_date }}{{ appointment.appointment_time }}〜{{ appointment.appointment_time|add_minutes:15 }}</p>
+                <p class="card-text">{% trans "診療内容" %}：
+                    {% if 2 == appointment.symptom_or_medicine_categoryid %}
+                        {{ appointment.medicine_name }}
+                    {% endif %}
+                    {% if 1 == appointment.symptom_or_medicine_categoryid %}
+                        {{ appointment.symptom_name }}
+                    {% endif %}
+                </p>
+                <p class="card-text">{% trans "先生" %}：{{ appointment.doctor.get_full_name }}</p>
+                <p class="card-text">{% trans "診断書" %}：{{ appointment.prescription_needed|yesno:"必要,不要" }}</p>
+                <a href="{% url 'appointment' %}" class="btn btn-primary">{% trans "予約を変更" %}</a>
+                <a href="#" class="btn btn-primary">{% trans "予約をキャンセル" %}</a>
+                <a href="https://meet.google.com/ofk-vhmx-paf" class="btn btn-danger">{% trans "ビデオ通話を待機する" %}</a>
+            {% endfor %}
+        </div>
+    </div>
+    <br>
+    <div class="card text-center">
+        <div id="waiting" class="card-body">
+            <h5 class="card-title">{% trans "オンライン診療の注意事項" %}</h5>
+            <ul>
+                <li>{% trans "・15分の予約枠で診察を行っているため、10分ほどお待ちいただく場合がございます。あらかじめご了承ください。" %}</li>
+                <li>{% trans "・予約時間まで30分を切ると「診察開始」ボタンが表示されます。あらかじめ動作確認をお願いします。" %}</li>
+                <li>{% trans "・予約変更は予約時間の30分前まで可能です。直前の変更はクリニックまで直接お電話ください。" %}</li>
+            </ul>
+        </div>
+    </div>
+    <br>
+    <div class="card text-center">
+        <div id="waiting" class="card-body">
+            <h5 class="card-title">お知らせ</h5>
+            <ul>
+                <li>2024/07/01 NEWS</li>
+                <li>〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇</li>
+                <li>2024/07/01 NEWS</li>
+                <li>〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇</li>
+                <li>2024/07/01 NEWS</li>
+                <li>〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

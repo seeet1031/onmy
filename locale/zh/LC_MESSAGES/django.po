@@ -1,0 +1,138 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-08-27 02:46+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: templates/accounts/appointment_list.html:33
+msgid "診療待ち情報"
+msgstr "诊疗待信息"
+
+#: templates/accounts/appointment_list.html:34
+msgid "過去の診療歴"
+msgstr ""
+
+#: templates/accounts/user_login.html:8 templates/accounts/user_login.html:96
+msgid "User Login"
+msgstr ""
+
+#: templates/accounts/user_login.html:103
+msgid "UserID"
+msgstr ""
+
+#: templates/accounts/user_login.html:107
+msgid "Password"
+msgstr ""
+
+#: templates/accounts/user_login.html:110
+msgid "Login"
+msgstr ""
+
+#: templates/accounts/user_login.html:113
+msgid "Select Language"
+msgstr ""
+
+#: templates/accounts/user_login.html:128
+msgid "Don't have an account?"
+msgstr ""
+
+#: templates/accounts/user_login.html:128
+msgid "Sign up here"
+msgstr ""
+
+#: templates/accounts/user_mypage.html:12
+#, fuzzy
+#| msgid "診療待ち情報"
+msgid "診療待ちの情報"
+msgstr "诊疗待信息"
+
+#: templates/accounts/user_mypage.html:13
+msgid "日時"
+msgstr ""
+
+#: templates/accounts/user_mypage.html:14
+msgid "診療内容"
+msgstr ""
+
+#: templates/accounts/user_mypage.html:22
+msgid "先生"
+msgstr ""
+
+#: templates/accounts/user_mypage.html:23
+msgid "診断書"
+msgstr ""
+
+#: templates/accounts/user_mypage.html:24
+msgid "予約を変更"
+msgstr ""
+
+#: templates/accounts/user_mypage.html:25
+msgid "予約をキャンセル"
+msgstr ""
+
+#: templates/accounts/user_mypage.html:26
+msgid "ビデオ通話を待機する"
+msgstr ""
+
+#: templates/accounts/user_mypage.html:33
+msgid "オンライン診療の注意事項"
+msgstr ""
+
+#: templates/accounts/user_mypage.html:35
+msgid ""
+"・15分の予約枠で診察を行っているため、10分ほどお待ちいただく場合がございま"
+"す。あらかじめご了承ください。"
+msgstr ""
+
+#: templates/accounts/user_mypage.html:36
+msgid ""
+"・予約時間まで30分を切ると「診察開始」ボタンが表示されます。あらかじめ動作確"
+"認をお願いします。"
+msgstr ""
+
+#: templates/accounts/user_mypage.html:37
+msgid ""
+"・予約変更は予約時間の30分前まで可能です。直前の変更はクリニックまで直接お電"
+"話ください。"
+msgstr ""
+
+#: templates/base_user.html:7
+msgid "ONMY診療予約"
+msgstr ""
+
+#: templates/base_user.html:118
+msgid "マイページ"
+msgstr ""
+
+#: templates/base_user.html:121
+msgid "基本情報"
+msgstr ""
+
+#: templates/base_user.html:124
+msgid "診察一覧"
+msgstr ""
+
+#: templates/base_user.html:127
+msgid "お知らせ"
+msgstr ""
+
+#: templates/base_user.html:132
+msgid "診療予約"
+msgstr ""
+
+#: templates/base_user.html:135
+msgid "ログアウト"
+msgstr ""

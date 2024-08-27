@@ -1,0 +1,22 @@
+# Google API credentials
+credentials.json
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
+
+# Django-specific files
+*.log
+*.pot
+*.pyc
+__pycache__/
+db.sqlite3
+
+# Environment
+.env
+venv/
+env/
+
+# Static and media files
+staticfiles/
+media/

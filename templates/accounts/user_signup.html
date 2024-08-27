@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}診療予約{% endblock %}</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://js.stripe.com/v3/"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #00ced117;
+        }
+
+        .navbar-custom .navbar-brand,
+        .navbar-custom .nav-link {
+            color: white;
+        }
+
+        .navbar-custom .nav-link:hover {
+            color: #d4d4d4;
+        }
+
+        .navbar-custom .navbar-toggler {
+            border-color: rgb(255, 255, 255);
+        }
+
+        .navbar-custom .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='rgba%28255, 255, 255, 1%29' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/3E%3C/svg%3E");
+        }
+
+        .navbar-text {
+            color: white;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .stripe-input {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 100%;
+        }
+
+        .form-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .form-group.col-md-4 {
+            flex: 0 0 48%;
+        }
+
+        #card-errors {
+            margin-top: 10px;
+            font-size: 0.875rem;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-custom">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="#">ONMY</a>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <div class="container mt-4">
+            <h2>サインアップ</h2>
+
+            <form id="payment-form" method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="id_username" class="form-label">ユーザー名</label>
+                    {{ user_form.username|add_class:"form-control" }}
+                </div>
+                <div class="mb-3">
+                    <label for="id_email" class="form-label">メールアドレス</label>
+                    {{ user_form.email|add_class:"form-control" }}
+                </div>
+                <div class="mb-3">
+                    <label for="id_password1" class="form-label">パスワード</label>
+                    {{ user_form.password1|add_class:"form-control" }}
+                </div>
+                <div class="mb-3">
+                    <label for="id_password2" class="form-label">パスワード確認</label>
+                    {{ user_form.password2|add_class:"form-control" }}
+                </div>
+                <div class="mb-3">
+                    <label for="id_first_name_kana" class="form-label">名前（カナ）</label>
+                    {{ profile_form.first_name_kana|add_class:"form-control" }}
+                </div>
+                <div class="mb-3">
+                    <label for="id_last_name_kana" class="form-label">苗字（カナ）</label>
+                    {{ profile_form.last_name_kana|add_class:"form-control" }}
+                </div>
+                <div class="mb-3">
+                    <label for="id_gender" class="form-label">性別</label>
+                    {{ profile_form.gender|add_class:"form-control" }}
+                </div>
+                <div class="mb-3">
+                    <label for="id_birth_date" class="form-label">生年月日</label>
+                    {{ profile_form.birth_date|add_class:"form-control" }}
+                </div>
+                <div class="mb-3">
+                    <label for="id_address_1" class="form-label">住所1</label>
+                    {{ profile_form.address_1|add_class:"form-control" }}
+                </div>
+                <div class="mb-3">
+                    <label for="id_address_2" class="form-label">住所2</label>
+                    {{ profile_form.address_2|add_class:"form-control" }}
+                </div>
+                <div class="mb-3">
+                    <label for="id_postal_code" class="form-label">郵便番号</label>
+                    {{ profile_form.postal_code|add_class:"form-control" }}
+                </div>
+                <div class="mb-3">
+                    <label for="id_phone_number" class="form-label">電話番号</label>
+                    {{ profile_form.phone_number|add_class:"form-control" }}
+                </div>
+                <div class="mb-3">
+                    <label for="id_insurance_card_front" class="form-label">保険証（表）</label>
+                    {{ profile_form.insurance_card_front|add_class:"form-control" }}
+                </div>
+                <div class="mb-3">
+                    <label for="id_insurance_card_back" class="form-label">保険証（裏）</label>
+                    {{ profile_form.insurance_card_back|add_class:"form-control" }}
+                </div>
+                <div class="mb-3">
+                    <label for="id_id_card_front" class="form-label">身分証明書（表）</label>
+                    {{ profile_form.id_card_front|add_class:"form-control" }}
+                </div>
+                <div class="mb-3">
+                    <label for="id_id_card_back" class="form-label">身分証明書（裏）</label>
+                    {{ profile_form.id_card_back|add_class:"form-control" }}
+                </div>
+
+                <!-- カード情報入力欄 -->
+                <div class="form-group" id="card-info">
+                    <label for="card-element">クレジットカード情報</label>
+                    <div id="card-element" class="stripe-input">
+                        <!-- Stripeのカード要素がここに表示されます -->
+                    </div>
+                    <div id="card-errors" role="alert"></div>
+                </div>
+
+                <button type="submit" class="btn btn-primary">サインアップ</button>
+            </form>
+
+            <a href="{% url 'user_login' %}">既にアカウントをお持ちですか？ こちらからログイン</a>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var stripe = Stripe("pk_test_51PmKavP8rwl4UjKOU4gqYh2TUFKKPwV2sspsMGP9qbVlhAnJOikUQMUUvnw9bUQ7RQkH4ELqjLwUJFaQLbw0BQ5v003XxHB0rZ");
+            var elements = stripe.elements();
+            var card = elements.create("card");
+            card.mount("#card-element");
+
+            // 支払い方法の選択監視
+            var paymentMethodInputs = document.querySelectorAll('input[name="payment_method"]');
+            paymentMethodInputs.forEach(function(input) {
+                input.addEventListener('change', function() {
+                    if (input.value === 'card') {
+                        document.getElementById('card-info').style.display = 'block';
+                    } else {
+                        document.getElementById('card-info').style.display = 'none';
+                    }
+                });
+            });
+
+            // 最初の状態を設定（カード情報欄は最初に表示）
+            document.getElementById('card-info').style.display = 'block';
+
+            // エラーメッセージの表示
+            card.on('change', function (event) {
+                var displayError = document.getElementById('card-errors');
+                if (event.error) {
+                    displayError.textContent = event.error.message;
+                } else {
+                    displayError.textContent = '';
+                }
+            });
+
+            var form = document.getElementById('payment-form');
+            form.addEventListener('submit', function (event) {
+                event.preventDefault();
+
+                // カードが選択されている場合のみトークンを生成
+                //var selectedPaymentMethod = document.querySelector('input[name="payment_method"]:checked').value;
+                //if (selectedPaymentMethod === 'card') {
+                    stripe.createToken(card).then(function (result) {
+                        if (result.error) {
+                            var errorElement = document.getElementById('card-errors');
+                            errorElement.textContent = result.error.message;
+                        } else {
+                            var hiddenInput = document.createElement('input');
+                            hiddenInput.setAttribute('type', 'hidden');
+                            hiddenInput.setAttribute('name', 'stripeToken');
+                            hiddenInput.setAttribute('value', result.token.id);
+                            form.appendChild(hiddenInput);
+                            form.submit();
+                        }
+                    });
+                //} else {
+                //    // Alipayの場合はそのままフォームを送信
+                //    form.submit();
+                //}
+            });
+        });
+    </script>
+</body>
+</html>

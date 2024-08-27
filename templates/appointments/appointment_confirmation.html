@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>予約確認</title>
+</head>
+<body>
+    <h1>予約確認</h1>
+
+    <p>予約が正常に完了しました。以下の詳細をご確認ください。</p>
+
+    <p><strong>診療タイプ:</strong> {{ appointment.appointment_type }}</p>
+    <p><strong>予約日:</strong> {{ appointment.appointment_date }}</p>
+    <p><strong>予約時間:</strong> {{ appointment.appointment_time }}</p>
+    <p><strong>担当医:</strong> {{ appointment.doctor.get_full_name }}</p>
+    <p><strong>症状または薬:</strong> {{ appointment.symptom_description }}</p>
+    <p><strong>Google Meetリンク:</strong> <a href="{{ appointment.meet_link }}" target="_blank">{{ appointment.meet_link }}</a></p>
+    
+    <p>ご予約ありがとうございます。診療時間にお会いしましょう。</p>
+</body>
+</html>

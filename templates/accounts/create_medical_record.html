@@ -1,0 +1,76 @@
+{% extends 'base_doctor.html' %}
+{% load custom_tags %}
+
+{% block content %}
+<h2>カルテ作成 - {{ user.last_name }} {{ user.first_name }}</h2>
+
+<!-- 患者の情報表示 -->
+<div>
+    <p><strong>氏名:</strong> {{ user.first_name }} {{ user.last_name }}</p>
+    <p><strong>生年月日:</strong> {{ user.profile.birth_date }}</p>
+    <p><strong>年齢:</strong> {{ user.profile.birth_date|calculate_age }}歳</p>  <!-- カスタムフィルタを使用して年齢を表示 -->
+    <p><strong>性別:</strong> 
+        {% if user.profile.gender == 'male' %}
+            男性
+        {% elif user.profile.gender == 'female' %}
+            女性
+        {% else %}
+            その他
+        {% endif %}
+        </p>    
+    <p><strong>住所:</strong> {{ user.profile.address_1 }}</p>
+    <p><strong>メールアドレス:</strong> {{ user.email }}</p>
+    <p><strong>電話番号:</strong> {{ user.profile.phone_number }}</p>
+
+</div>
+
+
+
+<!-- カルテ入力フォーム -->
+<form method="post" action="{% url 'create_medical_record' user.id appointment_id %}">
+
+    {% csrf_token %}
+    <div style="display: flex; justify-content: space-between;">
+        <!-- 左側の入力エリア -->
+        <div style="flex: 1; margin-right: 20px;">
+            <h3>左: 主訴・原因・主要症状・経過等</h3>
+            <div class="form-group">
+                <label for="chief_complaint">主訴</label>
+                <textarea id="chief_complaint" name="chief_complaint" class="form-control"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="cause">原因</label>
+                <textarea id="cause" name="cause" class="form-control"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="main_symptoms">主要症状</label>
+                <textarea id="main_symptoms" name="main_symptoms" class="form-control"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="progress">経過</label>
+                <textarea id="progress" name="progress" class="form-control"></textarea>
+            </div>
+        </div>
+
+        <!-- 右側の入力エリア -->
+        <div style="flex: 1;">
+            <h3>右: 処方・処置等</h3>
+            <div class="form-group">
+                <label for="prescription">処方</label>
+                <select id="prescription" name="prescription" class="form-control">
+                    <!-- 選択肢を動的に生成する場合はここで設定 -->
+                    <option value="薬1">薬1</option>
+                    <option value="薬2">薬2</option>
+                    <option value="薬3">薬3</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="treatment">処置</label>
+                <textarea id="treatment" name="treatment" class="form-control"></textarea>
+            </div>
+        </div>
+    </div>
+    <button type="submit" class="btn btn-primary mt-3">カルテを保存</button>
+</form>
+
+{% endblock %}

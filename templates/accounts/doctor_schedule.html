@@ -1,0 +1,271 @@
+{% extends 'base_doctor.html' %}
+{% load custom_tags %}
+
+{% block content %}
+<h2>スケジュール登録 - {{ user.last_name }} {{ user.first_name }}</h2>
+
+<div class="schedule-container">
+    <!-- 日付のヘッダー -->
+    <div class="schedule-header">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>時間</th>
+                    {% for date in dates %}
+                        <th class="date-column">{{ date|date:"m/d (D)" }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+        </table>
+    </div>
+
+        <!-- スケジュールのボディ -->
+    <div class="schedule-body">
+        <table class="table">
+            <tbody>
+                {% for time in times %}
+                <tr>
+
+                    {% if time|slice:"-3:" == ":00" %}
+                    <!-- 30分ごとの時間を表示 -->
+                    <td class="time-label" rowspan="2">    
+                        {{ time }}
+                    </td>
+                    {% endif %}
+
+
+                    {% for date in dates %}
+                    {% with date_str=date|date:'Y-m-d' time_str=time %}
+                        {% if schedule_dict|dict_key:date_str and time_str in schedule_dict|dict_key:date_str %}
+                            {% if time_str == schedule_dict|dict_key:date_str|first %}
+                                {% with start_time=schedule_dict|dict_key:date_str|first end_time=schedule_dict|dict_key:date_str|last %}
+                                    <td class="schedule-cell registered" data-date="{{ date_str }}" data-time="{{ time_str }}" rowspan="{{ schedule_dict|dict_key:date_str|length }}">{{ start_time }} - {{ end_time|addtime:"30" }}</td>
+                                {% endwith %}
+                            {% endif %}
+                        {% else %}
+                            <!-- 未登録の時間セル -->
+                            <td class="schedule-cell" data-date="{{ date_str }}" data-time="{{ time_str }}">
+                                <div class="time-range" style="display: none;"></div>
+                            </td>
+                        {% endif %}
+                    {% endwith %}
+                {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+    
+
+<!-- モーダル -->
+<div class="modal fade" id="scheduleModal" tabindex="-1" aria-labelledby="scheduleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="scheduleModalLabel">スケジュール登録確認</h5>
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="selectedTimeSlots">選択した時間帯を空きとして登録しますか？</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                <button type="button" class="btn btn-primary" id="confirmSchedule">登録</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        let isDragging = false;
+        let selectedCells = new Set();
+
+        document.querySelectorAll('.schedule-cell').forEach(cell => {
+            cell.addEventListener('mousedown', function(event) {
+                event.preventDefault();
+                isDragging = true;
+                selectedCells.clear();  // 以前の選択をクリア
+                document.querySelectorAll('.time-range').forEach(el => el.style.display = 'none'); // 既存の表示を非表示にする
+                
+                // 登録済みのセルをクリックした場合の処理
+                if (this.classList.contains('registered')) {
+                    let cellText = this.innerText.trim();
+                    let confirmation = confirm("このスケジュールを削除しますか？");
+                    if (confirmation) {
+                        // 削除する時間帯のリストを作成
+                        let date = this.dataset.date;
+                        let cellsToDelete = Array.from(document.querySelectorAll(`.schedule-cell.registered[data-date="${date}"]`));
+                        let timesToDelete = cellsToDelete.map(cell => cell.dataset.time);
+
+                        // サーバーに削除リクエストを送信
+                        $.ajax({
+                            url: '{% url "delete_schedule" %}',
+                            method: 'POST',
+                            headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+                            data: JSON.stringify({
+                                date: date,
+                                times: cellText
+                            }),
+                            contentType: 'application/json',
+                            success: function(data) {
+                                if (data.success) {
+                                    alert('スケジュールが削除されました。');
+                                    cellsToDelete.forEach(cell => {
+                                        cell.classList.remove('registered');
+                                        cell.innerText = ''; // セルの内容をクリア
+                                    });
+                                } else {
+                                    alert('スケジュールの削除に失敗しました。');
+                                }
+                            },
+                            error: function(xhr, status, error) {
+                                console.error('Error:', error);
+                                alert('リクエストエラーが発生しました。もう一度お試しください。');
+                            }
+                        });
+                    }
+                } else {
+                    // 登録されていないセルの選択処理
+                    this.classList.toggle('selected'); // クリックしたセルの選択状態を切り替え
+                    if (this.classList.contains('selected')) {
+                        selectedCells.add(this);
+                    } else {
+                        selectedCells.delete(this);
+                    }
+                    updateSelectedTimeRange(); // 時間範囲を更新
+                }
+            });
+
+            cell.addEventListener('mouseover', function() {
+                if (isDragging && !this.classList.contains('registered')) {
+                    this.classList.add('selected');
+                    selectedCells.add(this);
+                    updateSelectedTimeRange(); // 時間範囲を更新
+                }
+            });
+
+            cell.addEventListener('mouseup', function() {
+                if (isDragging) {
+                    isDragging = false;
+
+                    // 選択したセルを日付ごとにグループ化
+                    let groupedByDate = {};
+                    selectedCells.forEach(cell => {
+                        let date = cell.dataset.date;
+                        let time = cell.dataset.time;
+                        if (!groupedByDate[date]) {
+                            groupedByDate[date] = [];
+                        }
+                        groupedByDate[date].push(time);
+                    });
+
+                    let displayText = Object.keys(groupedByDate).map(date => {
+                        let times = groupedByDate[date].sort();
+                        let minTime = times[0];
+                        let maxTime = addMinutesToTime(times[times.length - 1], 30); // 最大時間に30分を追加
+                        return `${date} ${minTime} - ${maxTime}`;
+                    }).join('<br>');
+
+                    const selectedTimeSlotsElement = document.getElementById('selectedTimeSlots');
+                    if (selectedTimeSlotsElement) {
+                        selectedTimeSlotsElement.innerHTML = `選択した時間帯を空きとして登録しますか？<br>${displayText}`;
+                    }
+
+                    // モーダルを表示
+                    $('#scheduleModal').modal('show');
+                }
+            });
+        });
+
+        function updateSelectedTimeRange() {
+            if (selectedCells.size === 0) {
+                return;
+            }
+
+            let times = Array.from(selectedCells).map(cell => cell.dataset.time).sort();
+            let minTime = times[0];
+            let maxTime = addMinutesToTime(times[times.length - 1], 30); // 最大時間に30分を追加
+
+            let topMostCell = Array.from(selectedCells).sort((a, b) => a.dataset.time.localeCompare(b.dataset.time))[0];
+            let timeRangeDiv = topMostCell.querySelector('.time-range');
+
+            if (timeRangeDiv) {
+                timeRangeDiv.innerText = `${minTime} - ${maxTime}`;
+                timeRangeDiv.style.display = 'block';
+            }
+        }
+
+        function addMinutesToTime(time, minutesToAdd) {
+            const [hour, minute] = time.split(':').map(Number);
+            const date = new Date(2000, 1, 1, hour, minute);
+            date.setMinutes(date.getMinutes() + minutesToAdd);
+            const newHour = String(date.getHours()).padStart(2, '0');
+            const newMinute = String(date.getMinutes()).padStart(2, '0');
+            return `${newHour}:${newMinute}`;
+        }
+
+        const confirmScheduleElement = document.getElementById('confirmSchedule');
+        if (confirmScheduleElement) {
+            confirmScheduleElement.addEventListener('click', function() {
+                let selectedData = [];
+                selectedCells.forEach(cell => {
+                    selectedData.push({
+                        date: cell.dataset.date,
+                        time: cell.dataset.time
+                    });
+                });
+
+                // AJAXリクエストを送信
+                $.ajax({
+                    url: '{% url "save_schedule" %}',
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': '{{ csrf_token }}' },  // CSRFトークンを追加
+                    data: JSON.stringify({ schedule: selectedData }),
+                    contentType: 'application/json',
+                    success: function(data) {
+                        if (data.success) {
+                            alert('スケジュールが登録されました。');
+                            selectedCells.forEach(cell => {
+                                cell.classList.remove('selected');
+                                cell.classList.add('registered');
+                                cell.innerText = '登録済み'; // もしくは '空き枠' など適切なテキストを追加
+                            });
+                            selectedCells.clear();
+                        } else {
+                            alert('スケジュールの登録に失敗しました。');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error:', error);
+                        alert('リクエストエラーが発生しました。もう一度お試しください。');
+                    }
+                });
+
+                // モーダルを閉じて選択をクリア
+                $('#scheduleModal').modal('hide');
+            });
+        }
+
+        // モーダルが閉じられた時の処理
+        $('#scheduleModal').on('hidden.bs.modal', function () {
+            selectedCells.forEach(cell => {
+                cell.classList.remove('selected'); // 選択をクリア
+                let timeRangeDiv = cell.querySelector('.time-range');
+                if (timeRangeDiv) {
+                    timeRangeDiv.style.display = 'none'; // 時間表示をクリア
+                    timeRangeDiv.innerText = ''; // 時間のテキストもクリア
+                }
+            });
+            selectedCells.clear();
+        });
+
+        document.addEventListener('mouseup', function() {
+            isDragging = false;
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends 'base_user.html' %}
+
+{% block content %}
+
+<div class="container mt-4">
+    <h2>診療内容の修正</h2>
+    <form method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">保存</button>
+        <a href="{% url 'appointment_list' %}" class="btn btn-secondary">キャンセル</a>
+    </form>
+</div>
+{% endblock %}

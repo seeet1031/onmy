@@ -1,0 +1,159 @@
+{% extends 'base_user.html' %}
+
+{% block content %}
+<style>
+    .table thead th {
+        background-color: #f8f9fa;
+    }
+    .table td, .table th {
+        vertical-align: middle;
+    }
+    .container {
+        margin-top: 50px;
+    }
+    .card {
+        border: 1px solid #dee2e6;
+        border-radius: .25rem;
+    }
+    .card-header {
+        background-color: #6eb4ff;
+        color: #fff;
+        padding: .75rem 1.25rem;
+        border-bottom: 1px solid #dee2e6;
+    }
+    .card-body {
+        padding: 1.25rem;
+    }
+    .btn-primary {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+</style>
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                基本情報編集
+            </div>
+            <div class="card-body">
+                <form id="payment-form" method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="id_username" class="form-label">ユーザー名</label>
+                        {{ user_form.first_name }}{{ user_form.last_name }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_password2" class="form-label">カナ</label>
+                        {{ profile_form.first_name_kana }}{{ profile_form.last_name_kana }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_email" class="form-label">メールアドレス</label>
+                        {{ user_form.email }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_password2" class="form-label">性別</label>
+                        {{ profile_form.gender }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_password2" class="form-label">生年月日</label>
+                        {{ profile_form.birth_date }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_password2" class="form-label">住所１</label>
+                        {{ profile_form.address_1 }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_password2" class="form-label">住所２</label>
+                        {{ profile_form.address_2 }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_password2" class="form-label">郵便番号</label>
+                        {{ profile_form.postal_code }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_password2" class="form-label">電話番号</label>
+                        {{ profile_form.phone_number }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_password2" class="form-label">保険証（表）</label>
+                        {{ profile_form.insurance_card_front }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_password2" class="form-label">保険証（裏）</label>
+                        {{ profile_form.insurance_card_back }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_password2" class="form-label">身分証明書（表）</label>
+                        {{ profile_form.id_card_front }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_password2" class="form-label">身分証明書（裏）</label>
+                        {{ profile_form.id_card_back }}
+                    </div>
+                
+                    <h3>支払い方法</h3>
+                    <div class="form-group">
+                        <label for="card-element">クレジットカード情報</label>
+                        <div id="card-element">
+                            <!-- Stripeのカード要素がここに表示されます -->
+                        </div>
+                        <div id="card-errors" role="alert"></div>
+                    </div>
+                
+                    {% if card_info %}
+                        <div class="current-card-info">
+                            <p>現在のカード: {{ card_info.brand|title }} **** **** **** {{ card_info.last4 }}</p>
+                            <p>有効期限: {{ card_info.exp_month }}/{{ card_info.exp_year }}</p>
+                        </div>
+                    {% endif %}
+                
+                    <button type="submit">更新</button>
+                </form>
+                
+                <script>
+                    document.addEventListener("DOMContentLoaded", function () {
+                        var stripe = Stripe("pk_test_51PmKavP8rwl4UjKOU4gqYh2TUFKKPwV2sspsMGP9qbVlhAnJOikUQMUUvnw9bUQ7RQkH4ELqjLwUJFaQLbw0BQ5v003XxHB0rZ");
+                        var elements = stripe.elements();
+                        var card = elements.create("card");
+                        card.mount("#card-element");
+                
+                        // エラーメッセージの表示
+                        card.on('change', function (event) {
+                            var displayError = document.getElementById('card-errors');
+                            if (event.error) {
+                                displayError.textContent = event.error.message;
+                            } else {
+                                displayError.textContent = '';
+                            }
+                        });
+                
+                        var form = document.getElementById('payment-form');
+                        form.addEventListener('submit', function (event) {
+                            event.preventDefault();
+                
+                            stripe.createToken(card).then(function (result) {
+                                if (result.error) {
+                                    // エラーがあった場合、エラーメッセージを表示
+                                    var errorElement = document.getElementById('card-errors');
+                                    errorElement.textContent = result.error.message;
+                                } else {
+                                    // トークンをフォームに追加して送信
+                                    var hiddenInput = document.createElement('input');
+                                    hiddenInput.setAttribute('type', 'hidden');
+                                    hiddenInput.setAttribute('name', 'stripeToken');
+                                    hiddenInput.setAttribute('value', result.token.id);
+                                    form.appendChild(hiddenInput);
+                
+                                    // フォームを送信
+                                    form.submit();
+                                }
+                            });
+                        });
+                    });
+                </script>
+                
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    {% endblock %}

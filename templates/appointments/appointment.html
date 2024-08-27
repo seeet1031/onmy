@@ -1,0 +1,383 @@
+{% extends 'base_user.html' %}
+{% load custom_tags %}
+
+{% block content %}
+
+    <ul class="step-bar">
+        <li class="active" id="step1">Step 1: 再診確認</li>
+        <li id="step2">Step 2: 詳細設定</li>
+        <li id="step3">Step 3: オプション選択</li>
+        <li id="step4">Step 4: スケジュール</li>
+    </ul>
+
+    <div id="step1-content">
+        <h2>診療経験の確認</h2>
+        <div class="option-buttons">
+            {% if 'first' in appointment_type_choices %}
+            <button class="btn btn-primary" onclick="handleExperience('first')">初診</button>
+            {% endif %}
+            {% if 'revisit' in appointment_type_choices %}    
+                <button class="btn btn-primary" onclick="handleExperience('revisit')">再診</button>
+            {% endif %}
+
+        </div>
+        <div id="first-visit-notice" class="additional-options">
+            <p>初診の注意事項...</p>
+            <ul>
+                <li>・15分の予約枠で診察を行っているため、10分ほどお待ちいただく場合がございます。あらかじめご了承ください。</li>
+                <li>・予約時間まで30分を切ると「診察開始」ボタンが表示されます。あらかじめ動作確認をお願いします。</li>
+                <li>・予約変更は予約時間の30分前まで可能です。直前の変更はクリニックまで直接お電話ください。</li>
+            </ul>
+            <button class="btn btn-primary" onclick="nextStep()">次へ</button>
+        </div>
+        <div id="revisit-options" class="additional-options">
+            <p>過去の診察を引き継ぎますか？</p>
+            <div class="option-buttons">
+                <button class="btn btn-primary" onclick="handleRevisitChoice('yes')">はい</button>
+                <button class="btn btn-primary" onclick="handleRevisitChoice('no')">いいえ</button>
+            </div>
+            <div id="revisit-choice" class="additional-options">
+                <p>過去の診療内容を選択してください...</p>
+                <select id="past-appointments" class="form-select">
+                    <option value="1">診療内容1</option>
+                    <option value="2">診療内容2</option>
+                </select>
+                <button class="btn btn-primary" onclick="skipToStep4()">決定</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="step2-content" style="display:none;">
+        <h2>詳細設定</h2>
+        <div class="option-buttons">
+            <button class="btn btn-primary" onclick="handleDetailChoice('medicine')">薬から選択</button>
+            <button class="btn btn-primary" onclick="handleDetailChoice('symptom')">症状から選択</button>
+        </div>
+    
+        <!-- 薬を選択する部分 -->
+        <div id="medicine-choice" class="additional-options">
+            <p>薬を選択してください...</p>
+            <select class="form-select" name="selected_medicine" id="medicine-select">
+                {% for category, medicines in medicine_groups.items %}
+                <optgroup label="{{ category }}">
+                    {% for medicine in medicines %}
+                    <option value="{{ medicine.id }}">{{ medicine.name }}</option>
+                    {% endfor %}
+                </optgroup>
+                {% endfor %}
+            </select>
+        </div>
+    
+        <!-- 症状を選択する部分 -->
+        <div id="symptom-choice" class="additional-options">
+            <p>症状を選択してください...</p>
+            <select class="form-select" name="selected_symptom" id="symptom-select">
+                {% for category, symptoms in symptom_groups.items %}
+                <optgroup label="{{ category }}">
+                    {% for symptom in symptoms %}
+                    <option value="{{ symptom.id }}">{{ symptom.name }} - {{ symptom.description }}</option>
+                    {% endfor %}
+                </optgroup>
+                {% endfor %}
+            </select>
+        </div>
+    
+        <!-- 統一された問診表 -->
+        <div id="questionnaire" style="display:none;">
+            <h3>問診表</h3>
+            <form>
+                <div class="mb-3">
+                    <label for="symptom-description" class="form-label">いつ頃から、どのような症状でしたか？</label>
+                    <textarea id="symptom-description" class="form-control" rows="4"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="medications" class="form-label">現在、服用している薬はありますか？</label>
+                    <input type="text" id="medications" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label for="past-illnesses" class="form-label">今までにかかったことのある病気はありますか？</label>
+                    <input type="text" id="past-illnesses" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label for="allergies" class="form-label">薬や食べ物のアレルギーはありますか？</label>
+                    <input type="text" id="allergies" class="form-control">
+                </div>
+                <button type="button" class="btn btn-primary" onclick="nextStep()">次へ</button>
+            </form>
+        </div>
+    
+        <button class="btn btn-secondary" onclick="prevStep()">戻る</button>
+    </div>
+
+    <div id="step3-content" style="display:none;">
+        <h2>オプション選択</h2>
+        <p>先生を選択しますか？</p>
+        <div class="option-buttons">
+            <button class="btn btn-primary" onclick="handleDoctorChoice('yes')">はい</button>
+            <button class="btn btn-primary" onclick="handleDoctorChoice('no')">いいえ</button>
+        </div>
+        <div id="doctor-choice" class="additional-options">
+            <p>先生を選択してください...</p>
+            <select class="form-select" id="doctor-select" name="doctor">
+                {% for doctor in doctors %}
+                <option value="{{ doctor.id }}">{{ doctor.first_name }} {{ doctor.last_name }} - {{ doctor.profile.specialty }}</option>
+                {% endfor %}
+            </select>
+        </div>
+            <div class="form-check">
+            <input type="checkbox" class="form-check-input" id="diagnosis" name="diagnosis">
+            <label for="diagnosis" class="form-check-label">診断書を作成する</label>
+        </div>
+        <button class="btn btn-primary" onclick="nextStep()">次へ</button>
+        <button class="btn btn-secondary" onclick="prevStep()">戻る</button>
+    </div>
+
+    <div id="step4-content" style="display:none;">
+        <h2>スケジュール設定</h2>
+        <div id="calendar-container" class="calendar-wrapper">
+            <button onclick="nextWeek()" class="btn btn-primary mb-3">翌週へ</button>
+            <table class="table table-bordered mt-3">
+                <thead>
+                    <tr>
+                        <th>時間</th>
+                        {% for day in date_range %}
+                            <th>{{ day|date:"m月d日" }} ({{ day|date:"D" }})</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for time in time_slots %}
+                    <tr>
+                        <td>{{ time }}</td>
+                        {% for day in date_range %}
+                            {% with day_time=day|date:"Y-m-d" %}
+                            <td>
+                                {% if all_schedules|dict_has_key:day_time and time in all_schedules|dict_get:day_time %}
+                                    <a href="#" class="event-symbol event-symbol-enabled" data-bs-toggle="modal" data-bs-target="#confirmModal" onclick="showPopup('{{ day_time }}', '{{ time }}')">○</a>
+                                {% else %}
+                                    <span class="event-symbol event-symbol-disabled">×</span>
+                                {% endif %}
+                            </td>
+                            {% endwith %}
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+        <button class="btn btn-secondary" onclick="prevStep()">戻る</button>
+    </div>
+
+    <script>
+        let currentWeekOffset = 0;
+        let appointmentType = '';
+        let detailChoice = '';
+        let doctorChoice = '';
+        let diagnosis = false;
+
+        function handleExperience(type) {
+            appointmentType = type;
+            if (type === 'first') {
+                document.getElementById('first-visit-notice').classList.add('active');
+                document.getElementById('revisit-options').classList.remove('active');
+            } else {
+                document.getElementById('revisit-options').classList.add('active');
+                document.getElementById('first-visit-notice').classList.remove('active');
+            }
+        }
+
+        function handleRevisitChoice(choice) {
+            if (choice === 'yes') {
+                document.getElementById('revisit-choice').classList.add('active');
+            } else {
+                document.getElementById('revisit-choice').classList.remove('active');
+                nextStep();
+            }
+        }
+
+        function handleDetailChoice(type) {
+            detailChoice = type;
+            if (type === 'medicine') {
+                document.getElementById('symptom_or_medicine_categoryid').value = 1;
+                document.getElementById('medicine-choice').classList.add('active');
+                document.getElementById('symptom-choice').classList.remove('active');
+                document.getElementById('questionnaire').style.display = 'block';  // 薬が選択された後に問診表を表示
+            } else {
+                document.getElementById('symptom_or_medicine_categoryid').value = 2;
+                document.getElementById('symptom-choice').classList.add('active');
+                document.getElementById('medicine-choice').classList.remove('active');
+                document.getElementById('questionnaire').style.display = 'block';  // 症状が選択された後に問診表を表示
+            }
+        }
+
+        function handleDoctorChoice(choice) {
+            doctorChoice = choice;
+            if (choice === 'yes') {
+                document.getElementById('doctor-choice').classList.add('active');
+            } else {
+                document.getElementById('doctor-choice').classList.remove('active');
+            }
+        }
+
+        function showQuestionnaire() {
+            document.getElementById('questionnaire').classList.add('active');
+        }
+
+        function nextStep() {
+            if (document.getElementById('step1-content').style.display !== 'none') {
+                document.getElementById('step1-content').style.display = 'none';
+                document.getElementById('step2-content').style.display = 'block';
+                document.getElementById('step3-content').style.display = 'none';
+                document.getElementById('step4-content').style.display = 'none';
+                document.getElementById('step1').classList.remove('active');
+                document.getElementById('step2').classList.add('active');
+            } else if (document.getElementById('step2-content').style.display !== 'none') {
+                document.getElementById('step2-content').style.display = 'none';
+                document.getElementById('step3-content').style.display = 'block';
+                document.getElementById('step4-content').style.display = 'none';
+                document.getElementById('step2').classList.remove('active');
+                document.getElementById('step3').classList.add('active');
+            } else if (document.getElementById('step3-content').style.display !== 'none') {
+                document.getElementById('step3-content').style.display = 'none';
+                document.getElementById('step4-content').style.display = 'block';
+                document.getElementById('step3').classList.remove('active');
+                document.getElementById('step4').classList.add('active');
+            }
+        }
+
+        function prevStep() {
+            if (document.getElementById('step2-content').style.display !== 'none') {
+                document.getElementById('step2-content').style.display = 'none';
+                document.getElementById('step1-content').style.display = 'block';
+                document.getElementById('step3-content').style.display = 'none';
+                document.getElementById('step4-content').style.display = 'none';
+                document.getElementById('step2').classList.remove('active');
+                document.getElementById('step1').classList.add('active');
+            } else if (document.getElementById('step3-content').style.display !== 'none') {
+                document.getElementById('step3-content').style.display = 'none';
+                document.getElementById('step2-content').style.display = 'block';
+                document.getElementById('step4-content').style.display = 'none';
+                document.getElementById('step3').classList.remove('active');
+                document.getElementById('step2').classList.add('active');
+            } else if (document.getElementById('step4-content').style.display !== 'none') {
+                document.getElementById('step4-content').style.display = 'none';
+                document.getElementById('step3-content').style.display = 'block';
+                document.getElementById('step4').classList.remove('active');
+                document.getElementById('step3').classList.add('active');
+            }
+        }
+
+        function skipToStep4() {
+            document.getElementById('step1-content').style.display = 'none';
+            document.getElementById('step2-content').style.display = 'none';
+            document.getElementById('step3-content').style.display = 'none';
+            document.getElementById('step4-content').style.display = 'block';
+            document.getElementById('step1').classList.remove('active');
+            document.getElementById('step2').classList.remove('active');
+            document.getElementById('step3').classList.remove('active');
+            document.getElementById('step4').classList.add('active');
+        }
+
+        function nextWeek() {
+            currentWeekOffset += 1;
+        }
+        
+        function showPopup(date, hour, min) {
+            const formattedDate = date;
+            const formattedTime = hour;
+
+            document.getElementById('appointment_type').value = appointmentType;
+            document.getElementById('appointment_date').value = formattedDate;
+            document.getElementById('appointment_time').value = formattedTime;
+
+            const doctorElement = document.getElementById('doctor-select');
+            const selectedDoctor = doctorElement ? doctorElement.options[doctorElement.selectedIndex].text : '先生未指定';
+            const selectedDoctorId = doctorElement ? doctorElement.value : null;
+            document.getElementById('doctor').value = doctorChoice === 'yes' ? selectedDoctor : '先生未指定';
+            document.getElementById('doctor_id').value = selectedDoctorId;
+
+            const symptomsElement = detailChoice === 'medicine' ? document.querySelector('#medicine-choice select') : document.querySelector('#symptom-choice select');
+            const selectedDetail = symptomsElement ? symptomsElement.options[symptomsElement.selectedIndex].text : '';
+            const selectedDetail2 = symptomsElement ? symptomsElement.value : null;
+            const selectedDetailId = symptomsElement ? symptomsElement.value : null;
+            document.getElementById('symptoms').value = selectedDetail;
+            document.getElementById('symptom_or_medicine_id').value = selectedDetailId;
+
+            document.getElementById('prescription_needed').checked = document.getElementById('diagnosis').checked;
+
+            // モーダル内の問診表にデータをセット
+            document.getElementById('modal-symptom-description').value = document.getElementById('symptom-description').value;
+            document.getElementById('modal-medications').value = document.getElementById('medications').value;
+            document.getElementById('modal-past-illnesses').value = document.getElementById('past-illnesses').value;
+            document.getElementById('modal-allergies').value = document.getElementById('allergies').value;
+        }
+    </script>
+
+    <!-- モーダル -->
+    <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="modalTitle" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="modalForm" method="POST" action="{% url 'confirm_appointment' %}">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalTitle">予約確認</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" id="modalBody">
+                        <div class="mb-3">
+                            <label for="appointment_type" class="form-label">診療確認</label>
+                            <input type="text" id="appointment_type" name="appointment_type" class="form-control" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label for="appointment_date" class="form-label">予約日</label>
+                            <input type="text" id="appointment_date" name="appointment_date" class="form-control" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label for="appointment_time" class="form-label">予約時間</label>
+                            <input type="text" id="appointment_time" name="appointment_time" class="form-control" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label for="doctor" class="form-label">先生</label>
+                            <input type="text" id="doctor" name="doctor" class="form-control" readonly>
+                            <input type="hidden" id="doctor_id" name="doctor_id">
+                        </div>
+                        <div class="mb-3">
+                            <label for="symptoms" class="form-label">選択した薬または症状</label>
+                            <input type="text" id="symptoms" name="symptoms" class="form-control" readonly>
+                            <input type="hidden" id="symptom_or_medicine_id" name="symptom_or_medicine_id">
+                            <input type="hidden" id="symptom_or_medicine_categoryid" name="symptom_or_medicine_categoryid">
+                        </div>
+                        <div class="mb-3">
+                            <label for="modal-symptom-description" class="form-label">症状の説明</label>
+                            <textarea id="modal-symptom-description" name="symptom_description" class="form-control" readonly></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="modal-medications" class="form-label">現在の服薬</label>
+                            <input type="text" id="modal-medications" name="medications" class="form-control" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label for="modal-past-illnesses" class="form-label">過去の病歴</label>
+                            <input type="text" id="modal-past-illnesses" name="past_illnesses" class="form-control" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label for="modal-allergies" class="form-label">アレルギー</label>
+                            <input type="text" id="modal-allergies" name="allergies" class="form-control" readonly>
+                        </div>
+                                            <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="prescription_needed" name="prescription_needed" disabled>
+                            <label for="prescription_needed" class="form-check-label">診断書を作成する</label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
+                        <button type="submit" class="btn btn-primary">予約を確定</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+
+    {% endblock %}
+

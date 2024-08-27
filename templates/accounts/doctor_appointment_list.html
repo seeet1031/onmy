@@ -1,0 +1,289 @@
+{% extends 'base_doctor.html' %}
+
+{% block content %}
+<style>
+        .container {
+            margin-top: 50px;
+        }
+        .search-container {
+            margin-bottom: 20px;
+        }
+        .table-container {
+            margin-top: 20px;
+        }
+    </style>
+    <div class="container">
+
+        {% if appointments %}
+
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th scope="col">診察日</th>
+                        <th scope="col">診察時間</th>
+                        <th scope="col">名前</th>
+                        <th scope="col">症状</th>
+                        <th scope="col">お薬</th>
+                        <th scope="col">ステータス</th>
+                        <th scope="col">診療</th>
+                        <th scope="col">処方</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for appointment in appointments %}
+                    <tr>
+                        <td>{{ appointment.appointment_date }}</td>
+                        <td>{{ appointment.appointment_time }}</td>
+                        <td><a href="{% url 'medical_record_list' appointment.user.id appointment.id %}">{{ appointment.user.last_name }} {{ appointment.user.first_name }}</a></td>
+
+
+
+                        {% if 2 == appointment.symptom_or_medicine_categoryid %}
+                            <td></td>
+                            <td>{{ appointment.medicine_name }}</td>
+                        {% endif %}
+                        {% if 1 == appointment.symptom_or_medicine_categoryid %}
+                            <td>{{ appointment.symptom_name }}</td>
+                            <td></td>
+                        {% endif %}
+
+
+                        <td>
+                        
+                        {% if 'completed' == appointment.status %}完了{% endif %}
+                        {% if 'in_progress' == appointment.status %}予約中{% endif %}
+                        {% if 'cancelled' == appointment.status %}取消{% endif %}
+                        {% if 'expired' == appointment.status %}期限切れ{% endif %}
+                        </td>
+                        <td><a class="btn btn-info text-dark me-2" href="{{ appointment.meet_link }}">コール</a></td>
+                        <td><button type="button" class="btn btn-primary" onclick="openPrescriptionModal({{ appointment.id }})">処方箋作成</button></td>
+                    </tr>
+                {% endfor %}                   
+                </tbody>
+            </table>
+        {% else %}
+        <p>現在、予約はありません。</p>
+    {% endif %}
+    </div>
+    <div class="modal fade" id="prescriptionModal" tabindex="-1" aria-labelledby="prescriptionModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="prescriptionModalLabel">処方情報を入力</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="閉じる">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="prescriptionForm" method="post" action="{% url 'save_prescription' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="appointment_id" value="">
+
+
+                        <!-- ステータス変更 -->
+                        <div class="form-group">
+                            <label for="status">ステータス</label>
+                            <select id="status" name="status" class="form-control">
+                                <option value="in_progress">予約中</option>
+                                <option value="completed">完了</option>
+                                <option value="cancelled">取消</option>
+                                <option value="expired">期限切れ</option>
+                            </select>
+                        </div>
+                        
+                        <!-- 診療タイプの選択 -->
+                        <div class="form-group">
+                            <label>診療タイプ</label><br>
+                            <input type="radio" id="insurance" name="treatment_type" value="insurance" checked onchange="toggleInsuranceOptions()"> 保険診療
+                            <input type="radio" id="selfpay" name="treatment_type" value="selfpay" onchange="toggleInsuranceOptions()"> 自由診療
+                        </div>
+
+                        <!-- 保険診療の場合の割負担の選択 -->
+                        <div id="insurance-options" class="form-group">
+                            <label for="insurance_coverage">保険証の割合</label>
+                            <select id="insurance_coverage" name="insurance_coverage" class="form-control">
+                                <option value="10">1割負担</option>
+                                <option value="20">2割負担</option>
+                                <option value="30">3割負担</option>
+                            </select>
+                        </div>
+                        <!-- 薬の追加 -->
+                        <div id="medication-container">
+                            <div class="form-group medication-entry">
+                                <label for="medicine">薬</label>
+                                <select class="form-control" name="medicine[]">
+                                    {% for category, medicines in medicine_groups.items %}
+                                    <optgroup label="{{ category }}">
+                                        {% for medicine in medicines %}
+                                        <option value="{{ medicine.id }}" data-price="{{ medicine.price }}">{{ medicine.name }}</option>
+                                        {% endfor %}
+                                    </optgroup>
+                                    {% endfor %}
+                                    <option value="other">その他（手動入力）</option>
+                                </select>
+                                <input type="text" name="medicine_custom[]" class="form-control mt-2" placeholder="薬名を入力" style="display:none;">
+                                <input type="number" name="medicine_custom_price[]" class="form-control mt-2" placeholder="薬の料金を入力" style="display:none;">
+                                <label for="days">日数</label>
+                                <input type="number" name="days[]" class="form-control" value="1" min="1">
+                                <button type="button" class="btn btn-danger remove-medication mt-2">削除</button>
+                            </div>
+                        </div>                        <button type="button" id="addMedication" class="btn btn-secondary mt-3">薬を追加</button>
+    
+                        <!-- 診察代 -->
+                        <div class="form-group mt-3">
+                            <label for="consultation_fee">診察代</label>
+                            <input type="number" id="consultation_fee" name="consultation_fee" class="form-control" required>
+                        </div>
+                        
+                        <!-- 診断書の選択 -->
+                        <div class="form-group mt-3">
+                            <label for="diagnosis">診断書を作成</label>
+                            <input type="checkbox" id="diagnosis" name="diagnosis">
+                        </div>
+    
+                        <!-- 合計金額 -->
+                        <div class="form-group mt-3">
+                            <label for="total_fee">合計金額</label>
+                            <input type="number" id="total_fee" name="total_fee" class="form-control" readonly>
+                        </div>
+        
+                        <!-- 支払い負担額の表示 -->
+                        <div class="form-group">
+                            <label for="final_amount">支払い負担額 (円)</label>
+                            <input type="text" id="final_amount" name="final_amount" class="form-control" readonly>
+                        </div>
+
+                        <!-- アクションの選択 -->
+                        <div class="form-group mt-4">
+                            <button type="submit" name="action" value="send" class="btn btn-primary">送る</button>
+                            <button type="submit" name="action" value="create" class="btn btn-secondary">処方箋作成</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+function toggleInsuranceOptions() {
+    var treatmentType = document.querySelector('input[name="treatment_type"]:checked').value;
+    var insuranceOptions = document.getElementById('insurance-options');
+    calculateFinalAmount();  // 保険診療か自由診療かが変更されたときに計算を更新
+    if (treatmentType === 'insurance') {
+        insuranceOptions.style.display = 'block';
+    } else {
+        insuranceOptions.style.display = 'none';
+    }
+}
+
+function calculateFinalAmount() {
+    var totalFee = parseFloat(document.getElementById('total_fee').value) || 0;
+    var treatmentType = document.querySelector('input[name="treatment_type"]:checked').value;
+    var insuranceCoverage = parseInt(document.getElementById('insurance_coverage').value) || 0;
+    
+    var finalAmount;
+    if (treatmentType === 'insurance') {
+        finalAmount = totalFee * (insuranceCoverage / 100);
+    } else {
+        finalAmount = totalFee;
+    }
+
+    document.getElementById('final_amount').value = Math.round(finalAmount);  // 四捨五入して表示
+}
+        </script>
+    <script>
+document.addEventListener('DOMContentLoaded', function() {
+    function openPrescriptionModal(appointmentId) {
+        // モーダル内のhiddenフィールドにappointment_idを設定
+        const appointmentInput = document.querySelector('#prescriptionModal input[name="appointment_id"]');
+        
+        if (appointmentInput) {
+            appointmentInput.value = appointmentId;
+            // モーダルを表示
+            $('#prescriptionModal').modal('show');
+        } else {
+            console.error('モーダル内のappointment_idフィールドが見つかりません');
+        }
+    }
+
+    // グローバルに関数を定義しておく（イベントリスナーから呼び出せるように）
+    window.openPrescriptionModal = openPrescriptionModal;
+});
+
+
+
+
+        document.addEventListener('DOMContentLoaded', function () {
+    // 薬を追加するボタンのクリックイベント
+    document.getElementById('addMedication').addEventListener('click', function () {
+        const container = document.getElementById('medication-container');
+        const entry = document.querySelector('.medication-entry').cloneNode(true);
+        entry.querySelector('select').value = '';
+        entry.querySelector('input[type="text"]').style.display = 'none';
+        container.appendChild(entry);
+    });
+
+    // 薬の削除ボタンのクリックイベント
+    document.getElementById('medication-container').addEventListener('click', function (e) {
+        if (e.target && e.target.classList.contains('remove-medication')) {
+            e.target.closest('.medication-entry').remove();
+            calculateTotal();
+        }
+    });
+
+    // 薬の選択変更イベント
+    document.getElementById('medication-container').addEventListener('change', function (e) {
+        if (e.target.tagName === 'SELECT') {
+            const customInput = e.target.closest('.medication-entry').querySelector('input[type="text"]');
+            const customPriceInput = e.target.closest('.medication-entry').querySelector('input[name="medicine_custom_price[]"]');
+
+            if (e.target.value === 'other') {
+                customInput.style.display = 'block';
+                customPriceInput.style.display = 'block';
+            } else {
+                customInput.style.display = 'none';
+                customPriceInput.style.display = 'none';
+                customInput.value = '';
+                customPriceInput.value = '';
+            }
+            calculateTotal();
+        }
+    });
+
+    document.getElementById('medication-container').addEventListener('input', function (e) {
+        if (e.target.name === 'days[]' || e.target.name === 'medicine_custom_price[]' || e.target.id === 'consultation_fee') {
+            calculateTotal();
+        }
+    });
+
+    // 合計金額の計算
+    function calculateTotal() {
+        let total = 0;
+        const consultationFee = parseFloat(document.getElementById('consultation_fee').value) || 0;
+
+        document.querySelectorAll('.medication-entry').forEach(function (entry) {
+            const medicineSelect = entry.querySelector('select');
+            const days = parseFloat(entry.querySelector('input[name="days[]"]').value) || 1;
+            let price = 0;
+
+            if (medicineSelect.value !== 'other') {
+                price = parseFloat(medicineSelect.options[medicineSelect.selectedIndex].getAttribute('data-price')) || 0;
+            } else {
+                price = parseFloat(entry.querySelector('input[name="medicine_custom_price[]"]').value) || 0;
+            }
+
+            total += price * days;
+        });
+
+        total += consultationFee;
+        document.getElementById('total_fee').value = total;
+    }
+
+    // 診察代変更時に合計を再計算
+    document.getElementById('consultation_fee').addEventListener('input', calculateTotal);
+});
+    </script>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    {% endblock %}

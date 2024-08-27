@@ -1,0 +1,85 @@
+{% extends 'base_doctor.html' %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+<style>
+        .container {
+            margin-top: 50px;
+        }
+        .search-container {
+            margin-bottom: 20px;
+        }
+        .table-container {
+            margin-top: 20px;
+        }
+    </style>
+    <div class="container">
+
+        {% if appointments %}
+
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th scope="col">診察日</th>
+                        <th scope="col">診察時間</th>
+                        <th scope="col">名前</th>
+                        <th scope="col">症状</th>
+                        <th scope="col">お薬</th>
+                        <th scope="col">ステータス</th>
+                        <th scope="col">診療</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for appointment in appointments %}
+                    <tr>
+                        <td>{{ appointment.appointment_date }}</td>
+                        <td>{{ appointment.appointment_time }}</td>
+                        <td><a href="{% url 'medical_record_list' appointment.user.id appointment.id %}">{{ appointment.user.last_name }} {{ appointment.user.first_name }}</a></td>
+
+
+
+                        {% if 2 == appointment.symptom_or_medicine_categoryid %}
+                            <td></td>
+                            <td>{{ appointment.medicine_name }}</td>
+                        {% endif %}
+                        {% if 1 == appointment.symptom_or_medicine_categoryid %}
+                            <td>{{ appointment.symptom_name }}</td>
+                            <td></td>
+                        {% endif %}
+
+
+                        <td>
+                        
+                        {% if 'completed' == appointment.status %}完了{% endif %}
+                        {% if 'in_progress' == appointment.status %}予約中{% endif %}
+                        {% if 'cancelled' == appointment.status %}取消{% endif %}
+                        {% if 'expired' == appointment.status %}期限切れ{% endif %}
+                        </td>
+                        <td><a class="btn btn-info text-dark me-2" href="{{ appointment.meet_link }}">コール</a></td>
+                    </tr>
+                {% endfor %}                   
+                </tbody>
+            </table>
+        {% else %}
+        <p>現在、予約はありません。</p>
+    {% endif %}
+    </div>
+
+    <br>
+    <div class="card text-center">
+        <div id="waiting" class="card-body">
+            <h5 class="card-title">お知らせ</h5>
+            <ul>
+                <li>2024/07/01 NEWS</li>
+                <li>〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇</li>
+                <li>2024/07/01 NEWS</li>
+                <li>〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇</li>
+                <li>2024/07/01 NEWS</li>
+                <li>〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
